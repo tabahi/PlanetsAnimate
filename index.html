@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<style>
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background-color: rgb(39, 39, 39);
+}
+
+.full-height {
+  height: 100%;
+  background: yellow;
+}
+#myContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: rgb(199, 199, 199);
+}
+#myAnimation {
+  width: 50px;
+  height: 50px;
+  position: absolute;
+  background-color: red;
+}
+</style>
+<body onload="init()">
+
+
+    <div id ="myContainer">
+        <canvas id="canvasEle" width="0 px" height="0 px" style="background-color: rgb(0, 0, 0); left:0;top:0;"></canvas>
+        
+</div>
+
+<script>
+var id = null;
+var canvasEle = document.getElementById('canvasEle');
+var ctx = canvasEle.getContext("2d");
+var center_x = 0;
+var center_y = 0;
+var max_radius = 0;
+
+function init()
+{
+  clearInterval(id);
+  id = setInterval(place_objects, 10);
+}
+
+function reset_canvas()
+{
+  const max_width = window.innerWidth - 10;
+  const max_height = window.innerHeight - 10;
+  max_radius = max_height;
+  if(max_width < max_radius) max_radius = max_width;
+  max_radius /= 2;
+  center_x = max_width/2;
+  center_y = max_height/2;
+
+
+  canvasEle.width = max_width;
+  canvasEle.height = max_height;
+  
+  ctx.clearRect(0, 0, max_width, max_height);
+
+  ctx.fillStyle = "rgb(0, 13, 26)";
+  ctx.beginPath();
+  ctx.arc(center_x, center_y, max_radius, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.fill();
+  //Earth
+  add_object(center_x, center_y, "rgb(0,150,50)", 0, 0, 10);
+}
+
+var bodies = {sun: {delta:100, RA: 0}, moon: {delta:20, RA: 90}}
+
+function place_objects()
+{
+  bodies.sun.RA += 1/30;
+  if(bodies.sun.RA>360) bodies.sun.RA = 0;
+
+  
+  bodies.moon.RA++;
+  if(bodies.moon.RA>360) bodies.moon.RA = 0;
+
+  reset_canvas();
+  let max_AU = Math.sqrt(40);
+  
+  //Sun
+  add_object(center_x, center_y, "rgb(255,213,0)", bodies.sun.RA, max_radius * Math.sqrt(1)/max_AU, 10);
+
+  
+  //Mercury
+  add_object(center_x, center_y, "rgb(153, 204, 255)", bodies.sun.RA, max_radius * Math.sqrt(1.3)/max_AU, 4);
+
+  //Venus
+  add_object(center_x, center_y, "rgb(255, 102, 255)", bodies.sun.RA, max_radius * Math.sqrt(0.3)/max_AU, 5);
+
+  //Mars
+  add_object(center_x, center_y, "rgb(255, 51, 0)", bodies.sun.RA, max_radius * Math.sqrt(2.5)/max_AU, 5);
+
+  
+  //Jupiter
+  add_object(center_x, center_y, "rgb(204, 153, 0)", bodies.sun.RA, max_radius * Math.sqrt(5.2)/max_AU, 7);
+
+  //Saturn
+  add_object(center_x, center_y, "rgb(153, 153, 102)", bodies.sun.RA, max_radius * Math.sqrt(9.5)/max_AU, 7);
+
+  
+  //Uranus
+  add_object(center_x, center_y, "rgb(0, 204, 255)", bodies.sun.RA, max_radius * Math.sqrt(19.2)/max_AU, 6);
+
+  //Neptune
+  add_object(center_x, center_y, "rgb(51, 51, 255)", bodies.sun.RA, max_radius * Math.sqrt(30.1)/max_AU, 6);
+
+  
+
+  
+  //Pluto
+  add_object(center_x, center_y, "rgb(153, 0, 0)", bodies.sun.RA, max_radius * Math.sqrt(39)/max_AU, 4);
+
+  //add Moon
+  add_object(center_x, center_y, "rgb(255,255,255)", bodies.moon.RA, max_radius * Math.sqrt(0.0025)/max_AU, 2);
+}
+
+function add_object(center_x, center_y, color="rgb(100,100,100)", angle=0, dist=20, size=10)
+{
+  radians = ((angle+180)/360)*-2*Math.PI;
+  let x = dist * Math.cos(radians);
+  let y = dist * Math.sin(radians);
+
+  
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(center_x + x, center_y + y, size, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.fill();
+}
+
+
+
+function myMove() {
+    
+
+  var elem = document.getElementById("myAnimation");   
+  var pos = 0;
+  clearInterval(id);
+  id = setInterval(frame, 10);
+  function frame() {
+    if (pos == 100) {
+      clearInterval(id);
+    } else {
+      pos++;
+      
+      elem.style.top = (((pos/200)*window.innerHeight) - 50)  + 'px'; 
+      elem.style.left = (((pos/200)*window.innerWidth) - 50) + 'px'; 
+    }
+  }
+}
+</script>
+
+</body>
+</html>

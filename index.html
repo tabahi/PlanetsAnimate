@@ -41,11 +41,26 @@ var center_x = 0;
 var center_y = 0;
 var max_radius = 0;
 
+var pi = Math.PI;
+
 function init()
 {
   clearInterval(id);
-  id = setInterval(place_objects, 10);
+  id = setInterval(place_objects, 100);
 }
+
+function get_radians(degrees)
+{
+  return degrees * (Math.PI/180);
+}
+
+
+function get_degrees(radians)
+{
+  return radians * (180/Math.PI);
+}
+
+
 
 function reset_canvas()
 {
@@ -68,14 +83,24 @@ function reset_canvas()
   ctx.arc(center_x, center_y, max_radius, 0, 2 * Math.PI);
   ctx.stroke();
   ctx.fill();
-  //Earth
-  add_object(center_x, center_y, "rgb(0,150,50)", 0, 0, 10);
+  //Earth for Geocentric
+  //add_object(center_x, center_y, "rgb(0,150,50)", 0, 0, 10);
+
+  //Sun for Heliocentric
+  add_object(center_x, center_y, "rgb(255,213,0)", 0, 0, 20);
 }
 
 var bodies = {sun: {delta:100, RA: 0}, moon: {delta:20, RA: 90}}
+var ts = new Date(2020, 11, 08, 0, 0, 0, 0);
 
 function place_objects()
 {
+  
+  let ts_ms = ts.getUTCMilliseconds() + 86400000;
+  ts.setUTCMilliseconds(ts_ms);
+  //console.log(ts);
+  
+
   bodies.sun.RA += 1/30;
   if(bodies.sun.RA>360) bodies.sun.RA = 0;
 
@@ -87,12 +112,14 @@ function place_objects()
   let max_AU = Math.sqrt(40);
   
   //Sun
-  add_object(center_x, center_y, "rgb(255,213,0)", bodies.sun.RA, max_radius * Math.sqrt(1)/max_AU, 10);
+  //add_object(center_x, center_y, "rgb(255,213,0)", bodies.sun.RA, max_radius * Math.sqrt(1)/max_AU, 10);
 
   
   //Mercury
-  add_object(center_x, center_y, "rgb(153, 204, 255)", bodies.sun.RA, max_radius * Math.sqrt(1.3)/max_AU, 4);
+  merc_vars = kepler_mercury(ts);
+  add_object(center_x, center_y, "rgb(153, 204, 255)", merc_vars["long_mean"], max_radius * Math.sqrt(1.3)/max_AU, 4);
 
+  /*
   //Venus
   add_object(center_x, center_y, "rgb(255, 102, 255)", bodies.sun.RA, max_radius * Math.sqrt(0.3)/max_AU, 5);
 
@@ -121,11 +148,12 @@ function place_objects()
 
   //add Moon
   add_object(center_x, center_y, "rgb(255,255,255)", bodies.moon.RA, max_radius * Math.sqrt(0.0025)/max_AU, 2);
+  */
 }
 
 function add_object(center_x, center_y, color="rgb(100,100,100)", angle=0, dist=20, size=10)
 {
-  radians = ((angle+180)/360)*-2*Math.PI;
+  let radians = ((angle+180)/360)*-2*Math.PI;
   let x = dist * Math.cos(radians);
   let y = dist * Math.sin(radians);
 
@@ -137,6 +165,108 @@ function add_object(center_x, center_y, color="rgb(100,100,100)", angle=0, dist=
   ctx.fill();
 }
 
+
+
+function kepler_mercury(timestamp)
+{
+  
+  let T = make_date(timestamp);
+
+  let mercury = {
+    "a": 0.38709927, "a_dot": 0.00000037,
+    "e": 0.20563593, "e_dot": 0.00001906,
+    "i": 7.00497902, "i_dot": -0.0059475,
+    "L": 252.250324, "L_dot": 149472.674,
+    "long_peri": 77.4577963, "long_peri_dot": 0.16047689,
+    "long_node":48.3307659, "long_node_dot": -0.1253408,
+  };
+
+  let a = (mercury["a"] + mercury["a_dot"] * T) * 149_597_870.7;
+  let e = mercury["e"] + mercury["e_dot"] * T;
+  let i = get_radians(mercury["i"] + mercury["i_dot"] * T);
+  let L = get_radians(mercury["L"] + mercury["L_dot"] * T);
+  let long_peri = get_radians(mercury["long_peri"] + mercury["long_peri_dot"] * T);
+  let long_node = get_radians(mercury["long_node"] + mercury["long_node_dot"] * T);
+
+  
+  let M_e = (L - long_peri) % (2 * pi);
+  let EPSILON = 0.00001;
+
+
+  
+  //Kepler's equation, to be used in a Newton solver.
+  function kepler_func(E_x, M_e_x, e_x) //kepler function--- main function for newtonRaphson
+  {    return E_x - e_x * Math.sin(E_x) - M_e_x; }
+
+  /*The derivative of Kepler's equation, to be used in a Newton solver.
+    Note that the argument M_e is unused, but must be present so the function
+    arguments are consistent with the kepler function.*/
+  function kepler_func_d_E(E_x, M_e_x, e_x)
+  {    return 1 - e_x * Math.cos(E_x); }
+
+  function newtonRaphson(guess) //root-finding function based on iterative derivatives
+  {
+      let h = kepler_func(guess, M_e, e) / kepler_func_d_E(guess, M_e, e);
+      
+      
+      while (Math.abs(h) >= EPSILON)
+      {
+          //console.log("h: "  + String(Math.abs(h)) + "guess: "  + String(guess));
+          h = kepler_func(guess, M_e, e) / kepler_func_d_E(guess, M_e, e);
+          // x(i+1) = x(i) - f(x) / f'(x)
+          guess = guess - h;
+      }
+      return guess;
+  }
+
+
+  let E = newtonRaphson(pi);
+
+  //console.log("Final root value = " +String(E));
+  
+  let nu = (2 * Math.atan(Math.sqrt((1 + e) / (1 - e)) * Math.tan(E / 2))) % (2 * pi);
+
+  //console.log("nu = " +String(nu));
+  
+  let omega = long_peri - long_node;
+
+  let kepler_vars = {"distance": a, "eccentricity": e, "inclination": get_degrees(i), "long_mean": get_degrees(nu), "long_peri": get_degrees(omega), "long_node": get_degrees(long_node)};
+
+
+  //print(f"𝑎 = {a:.5G} km", f"𝑒 = {e:.5F}", f"𝑖 = {np.degrees(i):.2F}°", f"𝜃 = {np.degrees(nu):.2F}°",
+   //     f"𝜔 = {np.degrees(omega):.2F}°", f"𝛺 = {np.degrees(long_node):.2F}°", sep="\n")
+  
+
+  //console.log(kepler_vars);
+  return kepler_vars;
+}
+
+function make_date(timestamp)
+{
+  //let T_GRG = new Date(Date.UTC(2020, 11, 8, 21, 30, 0)); //year, month, day, hours, minutes, seconds, milliseconds
+
+
+  let JDT = gregorian_to_julian_days_index(timestamp.getUTCFullYear(), timestamp.getUTCMonth()+1, timestamp.getUTCDate());
+  return (JDT - 2451545) / 36525;
+}
+
+
+function gregorian_to_julian_days_index(year, month, day)
+{
+  
+    //Convert the given proleptic Gregorian date to the equivalent Julian Day Number.
+    if (month < 1 || month > 12)
+      return alert("month must be between 1 and 12, inclusive " + String(month));
+    if (day < 1 || day > 31)
+      return alert("day must be between 1 and 31, inclusive " + String(day));
+    let A = parseInt((month - 14) / 12);
+    let B = 1461 * (year + 4800 + A);
+    let C = 367 * (month - 2 - 12 * A);
+    
+    let E = parseInt((year + 4900 + A) / 100);
+    let JDN = parseInt(B / 4) + parseInt(C / 12) - parseInt(3 * E / 4) + day - 32075;
+    return JDN;
+}
 
 
 function myMove() {

@@ -1,0 +1,22 @@
+{
+  "name": "planetsanimate",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tabahi/PlanetsAnimate.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tabahi/PlanetsAnimate/issues"
+  },
+  "homepage": "https://github.com/tabahi/PlanetsAnimate#readme",
+  "dependencies": {
+    "https": "^1.0.0"
+  }
+}

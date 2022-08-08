@@ -122,10 +122,11 @@ function get_ep(target_body_code, center_body_code = '399', start_date='2022-01-
         })  
         
         req.on('error', error => {
-            reject(error);
-        })
+            if( req_count<=10 ) {console.log("Horizon API TCP request failed. Will Retry soon. "+ error +"\nLink:\n" + options.hostname + options.path); setTimeout(send_horizon_req, 20000); }
+            else reject("Horizon API TCP request failed. "+ error +"\nLink:\n" + options.hostname + options.path);
+        });
         
-        req.end()
+        //req.end()
         }
         
         send_horizon_req();

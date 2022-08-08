@@ -73,7 +73,7 @@ function get_ep(target_body_code, center_body_code = '399', start_date='2022-01-
             port: 443,
             path: '/api/horizons.api?format=text&COMMAND=%27'+target_body_code+'%27&OBJ_DATA=%27No%27&MAKE_EPHEM=%27YES%27&EPHEM_TYPE=%27OBSERVER%27&CENTER=%27'+center_body_site+'%27&START_TIME=%27'+start_date+'%27&STOP_TIME=%27'+end_date+'%27&STEP_SIZE=%27'+step_mins+'%20min%27&QUANTITIES=%271,9,20,23,24,29%27',
             method: 'GET'
-          }
+          };
         let req_count = 0;
         //console.log(options.hostname + options.path);
         function send_horizon_req(){
@@ -126,7 +126,7 @@ function get_ep(target_body_code, center_body_code = '399', start_date='2022-01-
             else reject("Horizon API TCP request failed. "+ error +"\nLink:\n" + options.hostname + options.path);
         });
         
-        //req.end()
+        req.end();
         }
         
         send_horizon_req();

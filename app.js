@@ -12,7 +12,7 @@ const planet_codes = {"sun": '10', "moon": '301', "mercury": '199', "venus": '29
 function download_ephemeris()
 {
 
-    let ts_now = new Date(2019, 0, 01, 2, 0, 0, 0);
+    let ts_now = new Date(1990, 0, 01, 2, 0, 0, 0);
     
     function chain_download()
     {

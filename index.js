@@ -6,27 +6,29 @@ var center_y = 0;
 var max_radius = 0;
 const max_AU = Math.sqrt(40);
 
-var ts = new Date(2019, 0, 01, 2, 0, 0, 0);
+var ts = new Date(1991, 0, 01, 2, 0, 0, 0);
 
 var bodies = [
   {name: "sun",     color: "rgb(255,213,0)",      size: 5, au_factor: 1}, //0
-  {name: "mercury", color: "rgb(153, 204, 255)",  size: 2,  au_factor: 1},
-  {name: "venus",   color: "rgb(255, 102, 255)",  size: 3,  au_factor: 1},
+  {name: "mercury", color: "rgb(153, 204, 255)",  size: 1,  au_factor: 1},
+  {name: "venus",   color: "rgb(255, 102, 255)",  size: 1,  au_factor: 1},
   {name: "earth",   color: "rgb(0,150,50)",       size: 3,  au_factor: 1}, //3
-  {name: "mars",    color: "rgb(255, 51, 0)",     size: 3,  au_factor: 1},
-  {name: "jupiter", color: "rgb(204, 153, 0)",    size: 4,  au_factor: 1},
-  {name: "saturn",  color: "rgb(153, 153, 102)",  size: 4,  au_factor: 1},
-  {name: "uranus",  color: "rgb(0, 204, 255)",    size: 4,  au_factor: 1},
-  {name: "neptune", color: "rgb(51, 51, 255)",    size: 4,  au_factor: 1},
-  {name: "pluto",   color: "rgb(153, 0, 0)",      size: 2,  au_factor: 1}, //9
+  {name: "mars",    color: "rgb(255, 51, 0)",     size: 1,  au_factor: 1.5},
+  {name: "jupiter", color: "rgb(204, 153, 0)",    size: 4,  au_factor: 1.3},
+  {name: "saturn",  color: "rgb(153, 153, 102)",  size: 4,  au_factor: 1.2},
+  {name: "uranus",  color: "rgb(0, 204, 255)",    size: 3,  au_factor: 1},
+  {name: "neptune", color: "rgb(51, 51, 255)",    size: 3,  au_factor: 1},
+  {name: "pluto",   color: "rgb(153, 0, 0)",      size: 1,  au_factor: 1}, //9
   {name: "moon",    color: "rgb(255,255,255)",    size: 1,  au_factor: 6}, //10
 ];
 
 function init()
 {
   reset_canvas();
-  clearInterval(interval_id);
-  interval_id = setInterval(animate_objects, 100);
+  //clearInterval(interval_id);
+  //interval_id = setInterval(animate_objects, 10);
+
+  animate_objects();// recursive
 }
 
 
@@ -64,11 +66,11 @@ function reset_canvas()
 
 
 
-function animate_objects()
+function animate_objects() //recursive via  place_horizon_objects
 {
   let ts_ms = ts.getUTCMilliseconds() + 86400000;
   ts.setUTCMilliseconds(ts_ms);
-  console.log(ts);
+  //console.log(ts);
   //reset_canvas();
   //place_kepler_objects(ts);
   place_horizon_objects(ts);
@@ -92,18 +94,28 @@ function add_object(center_x, center_y, color="rgb(100,100,100)", angle=0, dist=
 
 function place_horizon_objects(timestamp)
 {
+  let all_await = [];
   for (let p=0; p<bodies.length; p++)
   {
     if(bodies[p]["name"]!="earth")
     get_horizon_epi(bodies[p]["name"], "earth", timestamp).then(epi_info => {
 
       add_object(center_x, center_y, bodies[p]["color"], epi_info["RA"], max_radius * (Math.sqrt(epi_info["au"])/max_AU) * bodies[p]["au_factor"], bodies[p]["size"]);
-    }).catch(e=>{ console.error(e); console.log("ERROR: Ephemeris unavailable for this time for " + bodies[p]["name"]); clearInterval(interval_id); return;});
+      epi_info = null;
+      all_await.push(Promise.resolve());
+
+    }).catch(e=>{ console.error(e); console.log("ERROR: Ephemeris unavailable for this time for " + bodies[p]["name"]); all_await.push(Promise.reject());});
 
   }
+
+  Promise.all(all_await).then(results => {
+    setTimeout(animate_objects, 100);
+  }).catch((error) => {
+      console.error(error);
+      console.log(timestamp);
+  });
 }
 
-get_horizon_epi("mercury", "earth", ts);
 
 function get_horizon_epi(target_body, center_body="earth", timestamp=new Date())
 {
@@ -132,6 +144,7 @@ function get_horizon_epi(target_body, center_body="earth", timestamp=new Date())
       ephemeris_info["au"] = json_obj[ts_label][8];
       ephemeris_info["au_dot"] = json_obj[ts_label][9];
       resolve(ephemeris_info);
+      json_obj = null;
     }
     else reject(console.error(ts_label + ' ts_label not found in JSON file ' + epi_file_path));
   

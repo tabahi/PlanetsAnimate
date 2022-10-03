@@ -6,12 +6,12 @@ fs = require('fs');
 //https://ssd.jpl.nasa.gov/horizons/manual.html
 
 
-var ts_now = new Date(1990, 0, 01, 2, 0, 0, 0); //start date for the ephemeris
+var ts_now = new Date(1991, 0, 01, 2, 0, 0, 0); //start date for the ephemeris
 var end_year = 2025; //download ephemeris up until this year
 
 const planet_names = ["sun",  "mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus" , "neptune", "pluto", "moon"];
 const planet_codes = {"sun": '10', "moon": '301', "mercury": '199', "venus": '299', "earth": '399', "mars": "499", "jupiter": "599", "saturn": "699", "uranus": "799", "neptune": "899", "pluto": "999"};
-
+const epi_store_path = "frontend/epi";
 
 function download_ephemeris()
 {
@@ -159,9 +159,10 @@ function get_boundary_timestamps(timestamp)
 function ensure_epi_on_date(target_body, center_body, lo_date, up_date, year_full)
 {
     return new Promise(function(resolve, reject) {
-    let date_dir = 'epi/' + year_full;
+    let date_dir = epi_store_path + '/' + year_full;
     try
     {
+        if (!fs.existsSync(epi_store_path)) fs.mkdirSync(epi_store_path);
         if (!fs.existsSync(date_dir)) fs.mkdirSync(date_dir);
         date_dir += '/' + lo_date + '_' + up_date;
         try
@@ -180,7 +181,7 @@ function ensure_epi_on_date(target_body, center_body, lo_date, up_date, year_ful
         return;
     }
 
-    let epi_file_path = 'epi/' + year_full + '/' + lo_date + '_' + up_date + '/' + target_body + '_' + center_body + '.json';
+    let epi_file_path = epi_store_path + '/' + year_full + '/' + lo_date + '_' + up_date + '/' + target_body + '_' + center_body + '.json';
 
     function read_json_back()
     {

@@ -7,6 +7,9 @@ var max_radius = 0;
 const max_AU = Math.sqrt(40);
 
 var ts = new Date(1991, 0, 01, 2, 0, 0, 0);
+var tsStop = ts;
+var isPlaying = false;
+var isHorizonEPImode = false;
 
 var bodies = [
   {name: "sun",     color: "rgb(255,213,0)",      size: 5, au_factor: 1}, //0
@@ -28,9 +31,38 @@ function init()
   //clearInterval(interval_id);
   //interval_id = setInterval(animate_objects, 10);
 
-  animate_objects();// recursive
 }
 
+function play_stop(cmd_play = null)
+{
+  if(cmd_play == null) cmd_play = !isPlaying;
+
+  if (cmd_play!== null && cmd_play==true) 
+  {
+    if(document.getElementById("orbitMode").value=="epi") isHorizonEPImode = true;
+    else isHorizonEPImode = false;
+
+    reset_canvas();
+    let sYear = parseInt(document.getElementById("sYear").value);
+    let sMonth = parseInt(document.getElementById("sMonth").value) - 1;
+    let sDate = parseInt(document.getElementById("sDate").value);
+
+    let eYear = parseInt(document.getElementById("eYear").value);
+    let eMonth = parseInt(document.getElementById("eMonth").value) - 1;
+    let eDate = parseInt(document.getElementById("eDate").value);
+    ts = new Date(sYear, sMonth, sDate, 2, 0, 0, 0);
+    tsStop = new Date(eYear, eMonth, eDate, 2, 0, 0, 0);
+
+    document.getElementById("playstopbtn").innerText = "Stop";
+    isPlaying = true
+    animate_objects(); // recursive
+  }
+  else if (cmd_play!== null && cmd_play==false) 
+  {
+    document.getElementById("playstopbtn").innerText = "Play";
+    isPlaying = false;
+  }
+}
 
 
 
@@ -55,11 +87,9 @@ function reset_canvas()
   ctx.arc(center_x, center_y, max_radius, 0, 2 * Math.PI);
   ctx.stroke();
   ctx.fill();
-  //Earth for Geocentric
-  add_object(center_x, center_y, bodies[3]["color"], 0, 0, bodies[3]["size"]);
 
-  //Sun for Heliocentric
-  //add_object(center_x, center_y, bodies[0]["color"], 0, 0, 20);
+  if (isHorizonEPImode) add_object(center_x, center_y, bodies[3]["color"], 0, 0, bodies[3]["size"]); //Earth for Geocentric
+  else add_object(center_x, center_y, bodies[0]["color"], 0, 0, 20); //Sun for Heliocentric
 }
 
 
@@ -68,12 +98,20 @@ function reset_canvas()
 
 function animate_objects() //recursive via  place_horizon_objects
 {
-  let ts_ms = ts.getUTCMilliseconds() + 86400000;
+  let stepDays = parseFloat(document.getElementById("stepDays").value);
+  let ts_ms = ts.getUTCMilliseconds() + (86400000 * stepDays);
   ts.setUTCMilliseconds(ts_ms);
+  if(ts.getTime() >= tsStop.getTime()) {play_stop(false); return;}
+  
+
+  document.getElementById("tsNow").innerText = ts.toLocaleDateString();
   //console.log(ts);
   //reset_canvas();
-  //place_kepler_objects(ts);
+
+  if (isHorizonEPImode)
   place_horizon_objects(ts);
+  else
+  place_kepler_objects(ts);
 }
 
 function add_object(center_x, center_y, color="rgb(100,100,100)", angle=0, dist=20, size=10)
@@ -109,7 +147,9 @@ function place_horizon_objects(timestamp)
   }
 
   Promise.all(all_await).then(results => {
+    if(isPlaying)
     setTimeout(animate_objects, 100);
+    else play_stop(false);
   }).catch((error) => {
       console.error(error);
       console.log(timestamp);
@@ -184,6 +224,7 @@ function place_kepler_objects(timestamp)
     let kepler_vars = calc_kepler_estimates(timestamp, bodies[p]["name"]);
     add_object(center_x, center_y, bodies[p]["color"], kepler_vars["long_mean"], max_radius * Math.sqrt(kepler_vars["distance"])/max_AU, bodies[p]["size"]);
   }
+  animate_objects();
 }
 
 

@@ -24,7 +24,7 @@ function get_degrees(radians)
 
 
 
-function calc_kepler_estimates( timestamp, planet = "em_barry")
+function calc_kepler_estimates(timestamp, planet = "em_barry")
 {
   
   let T = make_date(timestamp);

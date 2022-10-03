@@ -5,6 +5,10 @@ fs = require('fs');
 //references:
 //https://ssd.jpl.nasa.gov/horizons/manual.html
 
+
+var ts_now = new Date(1990, 0, 01, 2, 0, 0, 0); //start date for the ephemeris
+var end_year = 2025; //download ephemeris up until this year
+
 const planet_names = ["sun",  "mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus" , "neptune", "pluto", "moon"];
 const planet_codes = {"sun": '10', "moon": '301', "mercury": '199', "venus": '299', "earth": '399', "mars": "499", "jupiter": "599", "saturn": "699", "uranus": "799", "neptune": "899", "pluto": "999"};
 
@@ -12,7 +16,6 @@ const planet_codes = {"sun": '10', "moon": '301', "mercury": '199', "venus": '29
 function download_ephemeris()
 {
 
-    let ts_now = new Date(1990, 0, 01, 2, 0, 0, 0);
     
     function chain_download()
     {
@@ -26,7 +29,7 @@ function download_ephemeris()
         Promise.all(all_await).then(results => {
             let ts_ms = ts_now.getUTCMilliseconds() + 86400000; //add a day
             ts_now.setUTCMilliseconds(ts_ms);
-            if(ts_now.getUTCFullYear()!=2025) chain_download();
+            if(ts_now.getUTCFullYear()!=end_year) chain_download();
         }).catch((error) => {
             console.error(error);
             console.log(ts_now);

@@ -1,10 +1,14 @@
+// run it with node:
+// node download_epi.js
+
+//references:
+//https://ssd.jpl.nasa.gov/horizons/manual.html
+
+
 const { get } = require('http');
 const https = require('https');
 const { exit } = require('process');
 fs = require('fs');
-//references:
-//https://ssd.jpl.nasa.gov/horizons/manual.html
-
 
 var ts_now = new Date(1991, 0, 01, 2, 0, 0, 0); //start date for the ephemeris
 var end_year = 2025; //download ephemeris up until this year
